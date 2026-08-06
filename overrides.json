@@ -1,0 +1,61 @@
+{
+  "_comment": [
+    "Hand-maintained completions for the parts --help cannot tell us.",
+    "",
+    "'options' keys are flag names, applied to every command defining that",
+    "flag. Qualify with a command path to narrow it: 'plugin install:--foo'.",
+    "  choices: literal values, completed as a plain word list.",
+    "  action:  a zsh completion action, e.g. a helper from helpers.zsh.",
+    "",
+    "'positionals' keys are command paths, values are actions for the first",
+    "positional argument of a leaf command.",
+    "",
+    "Prefer leaving an option alone over guessing at its values: no",
+    "completion is a smaller lie than a wrong one."
+  ],
+
+  "options": {
+    "--model": {
+      "choices": [
+        "fable",
+        "opus",
+        "sonnet",
+        "haiku",
+        "claude-fable-5",
+        "claude-opus-5",
+        "claude-sonnet-5",
+        "claude-haiku-4-5-20251001"
+      ]
+    },
+    "--fallback-model": {
+      "choices": ["fable", "opus", "sonnet", "haiku"]
+    },
+    "--effort": {
+      "choices": ["low", "medium", "high", "xhigh", "max"]
+    },
+    "--setting-sources": {
+      "choices": ["user", "project", "local"]
+    },
+    "--agent": {
+      "action": "_claude_agents"
+    },
+    "--resume": {
+      "action": "_claude_sessions"
+    },
+    "-r": {
+      "action": "_claude_sessions"
+    },
+    "--marketplace": {
+      "action": "_claude_marketplaces"
+    }
+  },
+
+  "positionals": {
+    "plugin enable": "_claude_plugins",
+    "plugin disable": "_claude_plugins",
+    "plugin uninstall": "_claude_plugins",
+    "plugin details": "_claude_plugins",
+    "plugin update": "_claude_plugins",
+    "plugin validate": "_files -/"
+  }
+}

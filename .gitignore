@@ -1,0 +1,3 @@
+.zcompdump*
+*.pyc
+__pycache__/
