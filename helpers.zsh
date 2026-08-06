@@ -5,7 +5,7 @@
 # the normal case on a fresh install, and zsh then falls back to no candidates
 # rather than showing an error.
 
-_claude_agents() {
+__claude_agents() {
   local -a agents
   local dir file
 
@@ -20,7 +20,7 @@ _claude_agents() {
   _describe -t agents 'agent' agents
 }
 
-_claude_sessions() {
+__claude_sessions() {
   # Transcripts are stored per project directory, with the path slugified:
   # every '/' becomes '-', including the leading one.
   local dir="$HOME/.claude/projects/${PWD//\//-}"
@@ -37,7 +37,7 @@ _claude_sessions() {
   _describe -t sessions 'session' sessions
 }
 
-_claude_marketplaces() {
+__claude_marketplaces() {
   local dir="$HOME/.claude/plugins/marketplaces"
   local -a marketplaces
   local entry
@@ -51,7 +51,7 @@ _claude_marketplaces() {
   _describe -t marketplaces 'marketplace' marketplaces
 }
 
-_claude_plugins() {
+__claude_plugins() {
   local config="$HOME/.claude/plugins/installed_plugins.json"
   local -a plugins
 

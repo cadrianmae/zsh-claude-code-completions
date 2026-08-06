@@ -13,7 +13,7 @@
 # the normal case on a fresh install, and zsh then falls back to no candidates
 # rather than showing an error.
 
-_claude_agents() {
+__claude_agents() {
   local -a agents
   local dir file
 
@@ -28,7 +28,7 @@ _claude_agents() {
   _describe -t agents 'agent' agents
 }
 
-_claude_sessions() {
+__claude_sessions() {
   # Transcripts are stored per project directory, with the path slugified:
   # every '/' becomes '-', including the leading one.
   local dir="$HOME/.claude/projects/${PWD//\//-}"
@@ -45,7 +45,7 @@ _claude_sessions() {
   _describe -t sessions 'session' sessions
 }
 
-_claude_marketplaces() {
+__claude_marketplaces() {
   local dir="$HOME/.claude/plugins/marketplaces"
   local -a marketplaces
   local entry
@@ -59,7 +59,7 @@ _claude_marketplaces() {
   _describe -t marketplaces 'marketplace' marketplaces
 }
 
-_claude_plugins() {
+__claude_plugins() {
   local config="$HOME/.claude/plugins/installed_plugins.json"
   local -a plugins
 
@@ -99,7 +99,7 @@ _claude() {
 
   _arguments -C -s -S \
     '*--add-dir[Additional directories to allow tool access to]:directories:_files -/' \
-    '--agent[Agent for the current session. Overrides the '\''agent'\'' setting]:agent:_claude_agents' \
+    '--agent[Agent for the current session. Overrides the '\''agent'\'' setting]:agent:__claude_agents' \
     '--agents[JSON object defining custom agents (e.g]:json: ' \
     '--allow-dangerously-skip-permissions[Enable bypassing all permission checks as an option, without it being enabled by default]' \
     '*--allowedTools[Comma or space-separated list of tool names to allow (e.g. "Bash(git *) Edit")]:tools: ' \
@@ -153,8 +153,8 @@ _claude() {
     '--remote-control[Start an interactive session with Remote Control enabled (optionally named)]::name: ' \
     '--remote-control-session-name-prefix[Prefix for auto-generated Remote Control session names]:prefix: ' \
     '--replay-user-messages[Re-emit user messages from stdin back on stdout for acknowledgment (only works with --inpu]' \
-    '(-r --resume)-r[Resume a conversation by session ID, or open interactive picker with optional search term]::value:_claude_sessions' \
-    '(-r --resume)--resume[Resume a conversation by session ID, or open interactive picker with optional search term]::value:_claude_sessions' \
+    '(-r --resume)-r[Resume a conversation by session ID, or open interactive picker with optional search term]::value:__claude_sessions' \
+    '(-r --resume)--resume[Resume a conversation by session ID, or open interactive picker with optional search term]::value:__claude_sessions' \
     '--safe-mode[Start with all customizations (CLAUDE.md, skills, plugins, hooks, MCP servers, custom comm]' \
     '--session-id[Use a specific session ID for the conversation (must be a valid UUID)]:uuid: ' \
     '--setting-sources[Comma-separated list of setting sources to load (user, project, local)]:sources:(user project local)' \
@@ -200,7 +200,7 @@ _claude_agents() {
 
   _arguments -C -s -S \
     '--add-dir[Additional directory to allow tool access to in dispatched sessions (repeatable)]:directory:_files -/' \
-    '--agent[Default agent for sessions dispatched from agent view. Overrides the '\''agent'\'' setting]:agent:_claude_agents' \
+    '--agent[Default agent for sessions dispatched from agent view. Overrides the '\''agent'\'' setting]:agent:__claude_agents' \
     '--all[With --json\: also include completed background sessions]' \
     '--allow-dangerously-skip-permissions[Make bypass-permissions mode available to dispatched sessions without defaulting to it]' \
     '--cwd[Show only background sessions started under <path>]:path:_files' \
@@ -666,7 +666,7 @@ _claude_plugin_details() {
   _arguments -C -s -S \
     '(-h --help)-h[Display help for command]' \
     '(-h --help)--help[Display help for command]' \
-    '1: :_claude_plugins' && ret=0
+    '1: :__claude_plugins' && ret=0
 
   return ret
 }
@@ -682,7 +682,7 @@ _claude_plugin_disable() {
     '(-h --help)--help[Display help for command]' \
     '(-s --scope)-s[Installation scope\: user, project, local]:scope: ' \
     '(-s --scope)--scope[Installation scope\: user, project, local]:scope: ' \
-    '1: :_claude_plugins' && ret=0
+    '1: :__claude_plugins' && ret=0
 
   return ret
 }
@@ -696,7 +696,7 @@ _claude_plugin_enable() {
     '(-h --help)--help[Display help for command]' \
     '(-s --scope)-s[Installation scope\: user, project, local]:scope: ' \
     '(-s --scope)--scope[Installation scope\: user, project, local]:scope: ' \
-    '1: :_claude_plugins' && ret=0
+    '1: :__claude_plugins' && ret=0
 
   return ret
 }
@@ -934,7 +934,7 @@ _claude_plugin_uninstall() {
     '(-s --scope)--scope[Uninstall from scope\: user, project, or local]:scope: ' \
     '(-y --yes)-y[Skip the --prune confirmation prompt (required when stdin or stdout is not a TTY)]' \
     '(-y --yes)--yes[Skip the --prune confirmation prompt (required when stdin or stdout is not a TTY)]' \
-    '1: :_claude_plugins' && ret=0
+    '1: :__claude_plugins' && ret=0
 
   return ret
 }
@@ -948,7 +948,7 @@ _claude_plugin_update() {
     '(-h --help)--help[Display help for command]' \
     '(-s --scope)-s[Installation scope\: user, project, local, managed]:scope: ' \
     '(-s --scope)--scope[Installation scope\: user, project, local, managed]:scope: ' \
-    '1: :_claude_plugins' && ret=0
+    '1: :__claude_plugins' && ret=0
 
   return ret
 }

@@ -98,19 +98,20 @@ completion is a smaller lie than offering a wrong one.
 
 `just verify` does more than a syntax check. It starts a real interactive zsh
 over a `zpty`, types a prefix, presses tab, and asserts on what came back —
-so a completion that parses but never fires still fails the build.
+so a completion that parses but never fires still fails the build. Eighteen
+checks cover static structure, command aliases, override-supplied values, and
+the dynamic helpers.
 
-```
-[OK]   parses as zsh
-[OK]   declares #compdef claude
-[OK]   subcommands -> offers 'mcp'
-[OK]   long flags -> offers '--permission-mode'
-[OK]   flag values -> offers 'bypassPermissions'
-[OK]   model aliases -> offers 'sonnet'
-[OK]   effort levels -> offers 'xhigh'
-[OK]   nested commands -> offers 'add-json'
-[OK]   deep nesting -> offers 'add'
-```
+Checks against machine-specific state derive their expected value from that
+same state, and skip when the machine has none, rather than hard-coding a
+name that only exists on one laptop.
+
+This suite earns its keep. An earlier revision named a helper `_claude_agents`,
+which the `claude agents` subcommand's own generated completer silently
+overwrote — turning `claude --agent <TAB>` into unbounded recursion
+(`_tags: job table full or recursion limit exceeded`). It parsed fine and the
+static checks were green. Only pressing tab found it. The generator now
+refuses to emit when a helper name collides with a generated one.
 
 ## Layout
 

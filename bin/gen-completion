@@ -408,6 +408,39 @@ def emit_command(
         emit_command([*path, sub.name], sub, out, overrides)
 
 
+def emitted_names(path: list[str], command: Command) -> set[str]:
+    """Every zsh function name the emitter will define for this subtree."""
+    names = {func_name(path)}
+    if command.subcommands:
+        names.add(func_name(path) + "_commands")
+    for sub in command.subcommands:
+        names |= emitted_names([*path, sub.name], sub)
+    return names
+
+
+HELPER_DEF_RE = re.compile(r"^([A-Za-z_][\w]*)\s*\(\)\s*\{", re.MULTILINE)
+
+
+def check_collisions(root: Command, helpers: str) -> None:
+    """Refuse to emit if a helper would be clobbered by a generated function.
+
+    A generated completer is named after its command path, so a helper called
+    _claude_agents is silently overwritten the moment the CLI grows a
+    `claude agents` subcommand. The overwritten name still resolves, so the
+    breakage surfaces only as runaway recursion at completion time. Catch it
+    here instead.
+    """
+    generated = emitted_names([], root)
+    defined = set(HELPER_DEF_RE.findall(helpers))
+    clash = sorted(generated & defined)
+    if clash:
+        raise SystemExit(
+            "error: helper name(s) collide with generated completers: "
+            + ", ".join(clash)
+            + "\n       rename them in helpers.zsh (and overrides.json)."
+        )
+
+
 def emit(root: Command, version: str, overrides: dict, helpers: str) -> str:
     out = [
         "#compdef claude",
@@ -420,6 +453,7 @@ def emit(root: Command, version: str, overrides: dict, helpers: str) -> str:
         "",
     ]
     if helpers:
+        check_collisions(root, helpers)
         out.append(helpers.rstrip())
         out.append("")
     emit_command([], root, out, overrides)

@@ -55,11 +55,14 @@ setup="
   PROMPT='' RPROMPT=''
 "
 
-# Type $1, press tab, and echo back whatever zsh drew on the pty.
+# Type $1, press tab, and echo back whatever zsh drew on the pty. $2 is the
+# directory to complete from, which matters for anything reading per-project
+# state (sessions, project-local agents).
 complete_for() {
-  local input=$1 out='' line
+  local input=$1 dir=${2:-$repo} out='' line
   zpty -d claude_verify 2>/dev/null || true
   zpty claude_verify "zsh -f -i" || return 1
+  zpty -w claude_verify "cd -- ${(q)dir}"
   zpty -w claude_verify $setup
   # Let compinit finish before the tab lands, or the widget is not yet bound.
   sleep 1
@@ -75,8 +78,8 @@ complete_for() {
 }
 
 check() {
-  local desc=$1 input=$2 expect=$3 got
-  got=$(complete_for $input) || { fail "$desc (zpty failed)"; return }
+  local desc=$1 input=$2 expect=$3 dir=${4:-$repo} got
+  got=$(complete_for $input $dir) || { fail "$desc (zpty failed)"; return }
   if [[ $got == *$expect* ]]; then
     pass "$desc -> offers '$expect'"
   else
@@ -85,13 +88,51 @@ check() {
   fi
 }
 
-check "subcommands"      'claude '                  'mcp'
-check "long flags"       'claude --perm'            '--permission-mode'
-check "flag values"      'claude --permission-mode ' 'bypassPermissions'
-check "model aliases"    'claude --model '          'sonnet'
-check "effort levels"    'claude --effort '         'xhigh'
-check "nested commands"  'claude mcp '              'add-json'
+# Static structure, all derived from --help.
+check "subcommands"      'claude '                    'mcp'
+check "long flags"       'claude --perm'              '--permission-mode'
+check "short flags"      'claude -'                   '-p'
+check "flag values"      'claude --permission-mode '  'bypassPermissions'
+check "optional-arg flag" 'claude --prompt-suggestions ' 'true'
+check "nested commands"  'claude mcp '                'add-json'
 check "deep nesting"     'claude plugin marketplace ' 'add'
+check "nested flags"     'claude mcp add-json --'     '--scope'
+check "flags after flags" 'claude --print --mod'      '--model'
+
+# Command aliases (plugin|plugins, install|i) must dispatch like their
+# canonical names, not fall through to no completion.
+check "command alias"    'claude plugins '            'install'
+check "subcommand alias" 'claude plugin i'            'install'
+
+# From overrides.json.
+check "model aliases"    'claude --model '            'sonnet'
+check "effort levels"    'claude --effort '           'xhigh'
+
+check "directory values" 'claude --add-dir '          'bin'
+
+# From helpers.zsh. These read real state, so the expected value is derived
+# from that same state rather than hard-coded, and the check is skipped when
+# the machine has nothing to offer. They run against $HOME, which has both
+# agents and prior sessions; a fresh checkout has neither.
+#
+# A helper sharing a name with a generated completer used to be silently
+# overwritten, turning --agent into unbounded recursion. These checks are what
+# catch that, so keep them.
+skip() { print -r -- "[SKIP] $1" }
+
+agent_files=($HOME/.claude/agents/*.md(N))
+if (( $#agent_files )); then
+  check "dynamic agents" 'claude --agent ' ${agent_files[1]:t:r} $HOME
+else
+  skip "dynamic agents (no ~/.claude/agents/*.md on this machine)"
+fi
+
+session_files=($HOME/.claude/projects/${HOME//\//-}/*.jsonl(Nom))
+if (( $#session_files )); then
+  check "dynamic sessions" 'claude --resume ' ${${session_files[1]:t:r}%%-*} $HOME
+else
+  skip "dynamic sessions (no transcripts for \$HOME on this machine)"
+fi
 
 # --------------------------------------------------------------------------
 

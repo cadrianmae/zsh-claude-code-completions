@@ -37,25 +37,25 @@
       "choices": ["user", "project", "local"]
     },
     "--agent": {
-      "action": "_claude_agents"
+      "action": "__claude_agents"
     },
     "--resume": {
-      "action": "_claude_sessions"
+      "action": "__claude_sessions"
     },
     "-r": {
-      "action": "_claude_sessions"
+      "action": "__claude_sessions"
     },
     "--marketplace": {
-      "action": "_claude_marketplaces"
+      "action": "__claude_marketplaces"
     }
   },
 
   "positionals": {
-    "plugin enable": "_claude_plugins",
-    "plugin disable": "_claude_plugins",
-    "plugin uninstall": "_claude_plugins",
-    "plugin details": "_claude_plugins",
-    "plugin update": "_claude_plugins",
+    "plugin enable": "__claude_plugins",
+    "plugin disable": "__claude_plugins",
+    "plugin uninstall": "__claude_plugins",
+    "plugin details": "__claude_plugins",
+    "plugin update": "__claude_plugins",
     "plugin validate": "_files -/"
   }
 }
