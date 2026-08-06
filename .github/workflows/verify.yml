@@ -1,0 +1,50 @@
+name: Verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install zsh
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq zsh
+
+      # _claude is committed, so the behavioural checks need no CLI at all.
+      - name: Seed state for the dynamic-helper checks
+        run: ./scripts/seed-test-state.sh
+
+      - name: Verify committed completion
+        run: ./scripts/verify.sh
+
+      - name: Install Claude Code
+        run: |
+          curl -fsSL https://claude.ai/install.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.claude/bin" >> "$GITHUB_PATH"
+
+      # Generation is deterministic, so a _claude that does not round-trip has
+      # been hand-edited -- which the next scheduled run would silently revert.
+      # Only meaningful when the runner's CLI matches what _claude was built
+      # from; otherwise a legitimate version gap would look like tampering.
+      - name: Check the committed file is reproducible
+        run: |
+          pinned=$(cat claude-version)
+          current=$(claude --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+          if [[ "$pinned" != "$current" ]]; then
+            echo "::notice::skipping round-trip: _claude targets $pinned, runner has $current"
+            exit 0
+          fi
+          ./bin/gen-completion --output /tmp/roundtrip --version-file ''
+          if ! diff -u _claude /tmp/roundtrip; then
+            echo "::error::_claude does not match generator output; edit overrides.json or helpers.zsh, then run 'just build'"
+            exit 1
+          fi
+          echo "round-trip clean"

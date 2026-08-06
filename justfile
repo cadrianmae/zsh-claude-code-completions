@@ -9,6 +9,10 @@ generate claude="claude":
 verify:
     ./scripts/verify.sh
 
+# Create the state the dynamic-helper checks need (for CI or a bare machine)
+seed:
+    ./scripts/seed-test-state.sh
+
 # Regenerate, then verify
 build: generate verify
 

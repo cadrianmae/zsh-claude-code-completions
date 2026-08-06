@@ -49,15 +49,33 @@ If tab does nothing after installing, the completion cache is stale:
 
 ## Keeping it current
 
-The CLI ships often. Check and rebuild against your installed binary:
+The CLI ships often, so `_claude` is regenerated daily by
+[`.github/workflows/update.yml`](.github/workflows/update.yml): install the
+latest release, regenerate, run the checks, commit if anything moved. A
+failure opens an issue rather than passing quietly, since the failure that
+matters here is the silent one.
+
+Generation is deterministic and needs no credentials — no API key, no Claude
+run, no network beyond fetching the CLI. That is what makes committing
+straight to `main` reasonable: the output is either what a human would have
+produced or it is broken in a way `verify.sh` catches. `verify.yml` enforces
+the other half on pull requests, refusing a hand-edited `_claude` that would
+not survive the next scheduled run.
+
+**This tracks the latest release, which may not be your release.** CI keeps
+the repo current; it cannot know what you have installed. For that:
 
 ```bash
-just staleness   # is _claude behind?
-just build       # regenerate + verify
+just staleness   # is _claude behind the claude on my $PATH?
+just build       # regenerate + verify against it
 ```
 
-Generation takes about fifteen seconds and needs only the `claude` binary on
-`$PATH`.
+Generation takes about fifteen seconds and needs only `claude` on `$PATH`.
+
+CI runners have no `~/.claude`, so the dynamic-helper checks would skip there
+— precisely the checks that catch a shadowed helper. `just seed` (run by both
+workflows) creates a placeholder agent and transcript so those assertions stay
+real. It refuses to touch a directory that already holds anything.
 
 ## How it works
 
