@@ -88,6 +88,17 @@ produced or it is broken in a way `verify.sh` catches. `verify.yml` enforces
 the other half on pull requests, refusing a hand-edited `_claude` that would
 not survive the next scheduled run.
 
+GitHub disables scheduled workflows after 60 days without repository
+activity, which would stop the daily update quietly — nothing fails, the
+completions just stop tracking the CLI. A repo that runs for months on bot
+commits alone is exactly the target of that rule, so
+[`keepalive.yml`](.github/workflows/keepalive.yml) checks weekly and opens an
+issue once 48 days have passed since the last *human* commit, leaving twelve
+days to act. It deliberately does not count bot commits: if those were enough
+to reset the clock there would be nothing to warn about, and if they are not,
+counting them would hide the problem. The issue closes itself once a human
+commit lands.
+
 **This tracks the latest release, which may not be your release.** CI keeps
 the repo current; it cannot know what you have installed. For that:
 

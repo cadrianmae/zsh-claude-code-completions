@@ -1,0 +1,114 @@
+name: Scheduler keepalive
+
+# GitHub disables scheduled workflows after 60 days without repository
+# activity. This repo is designed to run for months with no human commits, so
+# that clock is a real threat to the daily update job -- and it fails silently:
+# the completions simply stop tracking the CLI, with nothing to notice.
+#
+# Whether the update workflow's own bot commits reset that clock is not
+# something the documentation settles, so this does not rely on them. It nags
+# at 48 days, leaving 12 days to act.
+#
+# Runs weekly because cron cannot express "every 48 days" -- it is calendar
+# based, and every-other-month lands at 59-62 days, which is past the cutoff.
+# A weekly check with a day-count condition gives a real 48-day trigger. Each
+# no-op run is a few seconds.
+
+on:
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  # 60-day cutoff minus a fortnight of slack.
+  THRESHOLD_DAYS: 48
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Measure time since the last human commit
+        id: age
+        run: |
+          # Bot commits are excluded deliberately: if they were what kept the
+          # scheduler alive, this workflow would have nothing to warn about,
+          # and if they are not, counting them would hide the problem.
+          last=$(git log --format='%cI%x09%ae' \
+                 | grep -v 'github-actions\[bot\]' | head -1 | cut -f1)
+          if [ -z "$last" ]; then
+            echo "no human commits found; treating as urgent"
+            echo "days=999" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          days=$(( ( $(date -u +%s) - $(date -u -d "$last" +%s) ) / 86400 ))
+          echo "last human commit $last -- $days day(s) ago"
+          echo "days=$days" >> "$GITHUB_OUTPUT"
+          echo "last=$last" >> "$GITHUB_OUTPUT"
+
+      - name: Warn when the scheduler is close to being disabled
+        if: fromJSON(steps.age.outputs.days) >= fromJSON(env.THRESHOLD_DAYS)
+        uses: actions/github-script@v7
+        env:
+          DAYS: ${{ steps.age.outputs.days }}
+          LAST: ${{ steps.age.outputs.last }}
+        with:
+          script: |
+            const days = process.env.DAYS;
+            const last = process.env.LAST || 'unknown';
+            const title = 'Scheduler keepalive: push something to keep the daily update running';
+            const body = [
+              `The last commit by a human was **${days} days ago** (${last}).`,
+              '',
+              'GitHub disables scheduled workflows after 60 days without',
+              'repository activity, which would stop the daily completion',
+              'update — quietly, with nothing failing.',
+              '',
+              'Any commit clears this. Re-running `just build` and pushing the',
+              'result is a useful one, since it re-pins against your own CLI.',
+              '',
+              'This issue closes itself once a human commit lands.',
+            ].join('\n');
+
+            const { owner, repo } = context.repo;
+            const open = (await github.rest.issues.listForRepo({
+              owner, repo, state: 'open', labels: 'keepalive',
+            })).data.find(i => i.title === title);
+
+            if (open) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: open.number,
+                body: `Still ${days} days since the last human commit.`,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner, repo, title, body, labels: ['keepalive'],
+              });
+            }
+
+      - name: Close the warning once a human has committed
+        if: fromJSON(steps.age.outputs.days) < fromJSON(env.THRESHOLD_DAYS)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = 'Scheduler keepalive: push something to keep the daily update running';
+            const { owner, repo } = context.repo;
+            const open = (await github.rest.issues.listForRepo({
+              owner, repo, state: 'open', labels: 'keepalive',
+            })).data.find(i => i.title === title);
+            if (open) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: open.number,
+                body: 'A human commit has landed; the 60-day clock is reset.',
+              });
+              await github.rest.issues.update({
+                owner, repo, issue_number: open.number, state: 'closed',
+              });
+            }
