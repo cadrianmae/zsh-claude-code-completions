@@ -20,6 +20,32 @@ with real value completion wherever the CLI declares its choices.
 
 ## Install
 
+**Script**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/cadrianmae/zsh-claude-code-completions/main/install.sh | sh
+```
+
+It clones a tagged release, detects oh-my-zsh, and prints the one line you
+need. It does not edit your shell configuration unless you pass `--modify-rc`,
+and `--dry-run` shows what it would do first.
+
+Two deliberate choices worth knowing. It defaults to the `v1` tag rather than
+`main`, because the scheduled workflow commits to `main` automatically —
+tracking it would mean running whatever the bot last produced. And it clones
+rather than downloading a loose `_claude`, so updating is `git pull`, the
+checkout can be read afterwards, and `just build` can regenerate against your
+own CLI version.
+
+If piping a URL into a shell makes you uneasy, that instinct is sound; the
+manual steps below do the same thing and are two commands.
+
+```
+--dir PATH     install somewhere specific     --ref REF    track a different ref
+--modify-rc    append the fpath line          --dry-run    change nothing
+--uninstall    remove it again
+```
+
 **oh-my-zsh**
 
 ```bash
