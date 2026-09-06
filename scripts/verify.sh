@@ -90,7 +90,7 @@ check() {
 
 # Static structure, all derived from --help.
 check "subcommands"      'claude '                    'mcp'
-check "long flags"       'claude --perm'              '--permission-mode'
+check "long flags"       'claude --permission-m'      '--permission-mode'
 check "short flags"      'claude -'                   '-p'
 check "flag values"      'claude --permission-mode '  'bypassPermissions'
 check "optional-arg flag" 'claude --prompt-suggestions ' 'true'
